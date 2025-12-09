@@ -19,15 +19,23 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images", "files", "videos"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos"
+      ]
     },
     "email": {
       "type": "string"
     },
-    "articles": {
+    "slug": {
+      "type": "uid",
+      "targetField": "name"
+    },
+    "blogs": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::article.article",
+      "target": "api::blog.blog",
       "mappedBy": "author"
     }
   }
