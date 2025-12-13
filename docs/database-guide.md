@@ -20,6 +20,41 @@
    ```
 5) 若从 SQLite 切换到 MySQL/PostgreSQL，确保目标库已创建且可连通；如需迁移已有数据，可用 Strapi Transfer/导出导入，或自行迁移。
 
+## `.env` 中的认证与密钥
+Strapi 运行依赖两类凭据：数据库连接账号/密码（前面介绍通过 `DATABASE_*` 变量配置）和 Strapi 自身的密钥。后者用于加密 cookie、签发 JWT、保护 API Token，必须在生产环境固定，避免每次重启时重新生成。
+
+```env
+APP_KEYS=<key1>,<key2>          # 保证至少两段且长度 32+，逗号分隔
+API_TOKEN_SALT=<random hex>     # 用于 API Token，推荐 32 字节十六进制
+ADMIN_JWT_SECRET=<random hex>   # Strapi 管理界面 JWT 的签名密钥
+STRAPI_JWT_SECRET=<random hex>  # 公共 API 的 JWT 秘钥
+TRANSFER_TOKEN_SALT=<random hex> # Strapi Transfer 插件或导出/导入时签发共享令牌
+```
+
+除了以上，MySQL/PostgreSQL 还需 `DATABASE_USERNAME`/`DATABASE_PASSWORD` 提供数据库认证信息，确保账号具备建库写入权限。
+
+### 自动生成随机密钥
+直接使用 Node 提供的 `crypto` 模块可以快速生成可信随机串：
+
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+执行四次（或更多）填入对应 `.env` 变量，并将 `APP_KEYS` 设为至少两段，用逗号隔开。如需批量生成，可放入脚本：
+
+```js
+// scripts/generate-keys.js
+import { randomBytes } from 'node:crypto';
+const hex = () => randomBytes(32).toString('hex');
+console.log('APP_KEYS=' + [hex(), hex()].join(','));
+console.log('API_TOKEN_SALT=' + hex());
+console.log('ADMIN_JWT_SECRET=' + hex());
+console.log('STRAPI_JWT_SECRET=' + hex());
+console.log('TRANSFER_TOKEN_SALT=' + hex());
+```
+
+`node scripts/generate-keys.js` 会输出四组密钥，复制粘贴即可；该脚本无需提交仓库，加入 `.gitignore` 或在 CI 中常规生成也可以。
+
 ## 环境变量速查
 `config/database.ts` 支持三类配置，均通过环境变量注入。
 
